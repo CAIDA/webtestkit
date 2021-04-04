@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"serverlinks/iputils"
 	"spservers/common"
@@ -45,14 +46,26 @@ var hintsmap map[int][]string
 func ConvOoklatoDB(oservers []OoklaServer, cfg *common.Config) []spdb.SpeedServer {
 	ss := make([]spdb.SpeedServer, 0)
 	for _, s := range oservers {
-		ooklainfo := spdb.OoklaInfo{CountryCode: s.CountryCode, Sponsor: s.Sponsor, Https: s.Https, Url: s.Url}
+		ooklainfo := spdb.OoklaInfo{CountryCode: s.Country, Sponsor: s.Sponsor, Https: s.Https, Url: s.Url}
 		longfloat, _ := strconv.ParseFloat(s.Lon, 64)
 		latfloat, _ := strconv.ParseFloat(s.Lat, 64)
 		location := spdb.JSONPoint{Type: "Point", Coord: []float64{longfloat, latfloat}}
-		server := spdb.SpeedServer{Type: "ookla", Id: s.Id, City: s.Name, Country: s.Country, Host: s.Host, IPv4: s.IPv4, IPv6: "", Asnv4: s.ASN, Enabled: true, Additional: &ooklainfo, Location: location, LastUpdated: cfg.StartTime}
+		server := spdb.SpeedServer{Type: "ookla", Id: s.Id, Identifier: s.Name + " - " + s.Sponsor, City: s.Name, Country: s.CountryCode, Host: s.Host, IPv4: s.IPv4, IPv6: "", Asnv4: s.ASN, Enabled: true, Additional: &ooklainfo, Location: location, LastUpdated: cfg.StartTime}
 		ss = append(ss, server)
 	}
 	return ss
+}
+
+func ImportOoklaServerfromFile(cfg *common.Config, filename string) []spdb.SpeedServer {
+	var allokserver []OoklaServer
+	jsonFile, err := os.Open(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer jsonFile.Close()
+	serverstr, _ := ioutil.ReadAll(jsonFile)
+	json.Unmarshal(serverstr, &allokserver)
+	return ConvOoklatoDB(allokserver, cfg)
 }
 
 func LoadOokla(cfg *common.Config) []spdb.SpeedServer {

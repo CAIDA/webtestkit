@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"spservers/common"
 	"spservers/spdb"
@@ -38,6 +39,18 @@ type ComcastConfig struct {
 var wg sync.WaitGroup
 var allserver []ComcastServer
 var retry int = 10
+
+func ImportComcastServerfromFile(cfg *common.Config, filename string) []spdb.SpeedServer {
+	var allokserver []ComcastServer
+	jsonFile, err := os.Open(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer jsonFile.Close()
+	serverstr, _ := ioutil.ReadAll(jsonFile)
+	json.Unmarshal(serverstr, &allokserver)
+	return ConvComcasttoDB(allokserver, cfg)
+}
 
 func LoadComcastServer(cfg *common.Config) []spdb.SpeedServer {
 	/*cfg := &ComcastConfig{}
@@ -143,7 +156,7 @@ func ConvComcasttoDB(cs []ComcastServer, cfg *common.Config) []spdb.SpeedServer 
 	//invalid lat long
 	emptypoint := spdb.JSONPoint{Type: "Point", Coord: []float64{999, 999}}
 	for cidx, c := range cs {
-		tmps := spdb.SpeedServer{Type: "comcast", Id: strconv.Itoa(c.Id), Country: "US", Host: c.Host, City: c.Name, IPv4: c.IPv4, IPv6: c.IPv6, Asnv4: "7922", Enabled: true, LastUpdated: cfg.StartTime, Location: emptypoint}
+		tmps := spdb.SpeedServer{Type: "comcast", Id: strconv.Itoa(c.Id), Identifier: c.Name, Country: "US", Host: c.Host, City: c.Name, IPv4: c.IPv4, IPv6: c.IPv6, Asnv4: "7922", Enabled: true, LastUpdated: cfg.StartTime, Location: emptypoint}
 		s[cidx] = tmps
 	}
 	return s
