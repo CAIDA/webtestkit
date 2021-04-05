@@ -20,7 +20,6 @@ func main() {
 		if _, err := os.Stat(cfg.CreateFilePrefix); os.IsNotExist(err) {
 			err := os.MkdirAll(cfg.CreateFilePrefix, 0744)
 			if err != nil {
-				mbot.SendPanic("Create output directory error" + err.Error())
 				log.Fatal(err)
 			}
 		}
