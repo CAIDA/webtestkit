@@ -1,9 +1,9 @@
 package comcast
 
 import (
-	"cloudanalysis/analysis"
-	"cloudanalysis/common"
-	"cloudanalysis/savedata"
+	"analysis/evaluation"
+	"analysis/common"
+	"analysis/savedata"
 	"log"
 	"os"
 	"strconv"
@@ -107,31 +107,31 @@ func ComcastPlotFlow(filename string, ct common.TestSummary) {
 		log.Fatal(err)
 	}
 	ival := 0.05
-	pcaptput := analysis.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
-	xtput := analysis.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
+	pcaptput := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
+	xtput := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
 	downcsv := &savedata.SaveCSV{}
 	_ = downcsv.NewCSV(common.Getfilename(filename) + ".down.csv")
 	for _, flow := range measflow {
 		if flow.DownUp == 0 {
 			log.Println("Flow th", flow.SrcPort)
-			ap := analysis.PcapTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival)
+			ap := evaluation.PcapTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival)
 			for _, pdata := range ap {
 				tmpdata := []string{strconv.FormatFloat(pdata.X, 'f', -1, 64), flow.Host, flow.Port, flow.SrcPort, "1", strconv.FormatFloat(pdata.Y, 'f', -1, 64)}
 				downcsv.AddOneToCSV(tmpdata)
 			}
-			ax := analysis.XhrTput(flow.Rrs, flow.XhrTiming, ival)
+			ax := evaluation.XhrTput(flow.Rrs, flow.XhrTiming, ival)
 			for _, xdata := range ax {
 				tmpdata := []string{strconv.FormatFloat(xdata.X, 'f', -1, 64), flow.Host, flow.Port, flow.SrcPort, "2", strconv.FormatFloat(xdata.Y, 'f', -1, 64)}
 				downcsv.AddOneToCSV(tmpdata)
 			}
-			accp := analysis.AccumPcap(metatiming.IndexPcap, flow.Port, flow.PcapInfo.PckDump)
-			accr := analysis.AccumRrs(metatiming.Index, flow.Rrs)
+			accp := evaluation.AccumPcap(metatiming.IndexPcap, flow.Port, flow.PcapInfo.PckDump)
+			accr := evaluation.AccumRrs(metatiming.Index, flow.Rrs)
 			pcaptput.AddTput(ap)
 			xtput.AddTput(ax)
 			err = plotutil.AddLinePoints(p, accp)
 			err = plotutil.AddLinePoints(pr, accr)
-			err = plotutil.AddLinePoints(pth, analysis.PcapTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival))
-			err = plotutil.AddLinePoints(pxth, analysis.XhrTput(flow.Rrs, flow.XhrTiming, ival))
+			err = plotutil.AddLinePoints(pth, evaluation.PcapTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival))
+			err = plotutil.AddLinePoints(pxth, evaluation.XhrTput(flow.Rrs, flow.XhrTiming, ival))
 			/*			if len(accp) > 0 && len(accr) > 0 {
 						factor := float64(len(accr)) / float64(len(accp))
 					}*/
@@ -237,21 +237,21 @@ func ComcastPlotUpload(filename string, ct common.TestSummary) {
 		log.Fatal(err)
 	}
 	ival := 0.05
-	pcaptputwopt := analysis.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
-	xhrtput := analysis.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
-	rrstput := analysis.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
+	pcaptputwopt := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
+	xhrtput := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
+	rrstput := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
 
 	for _, flow := range measflow {
 		if flow.DownUp == 1 {
-			ap := analysis.PcapUpTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival)
-			ax := analysis.XhrUpTput(metatiming.IndexPcap, metatiming.Index, flow.Port, flow.PcapInfo, flow.XhrTiming, ival)
-			ar := analysis.RrsUpTput(metatiming.IndexPcap, metatiming.Index, flow.Port, flow.PcapInfo, flow.Rrs.Timing, flow.Rrs.ReqTs, flow.Rrs.RespTs, ival)
+			ap := evaluation.PcapUpTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival)
+			ax := evaluation.XhrUpTput(metatiming.IndexPcap, metatiming.Index, flow.Port, flow.PcapInfo, flow.XhrTiming, ival)
+			ar := evaluation.RrsUpTput(metatiming.IndexPcap, metatiming.Index, flow.Port, flow.PcapInfo, flow.Rrs.Timing, flow.Rrs.ReqTs, flow.Rrs.RespTs, ival)
 			//		log.Println("upload flow", flow.Port, len(flow.PcapInfo.PckDump), ap, ax)
 			//accp := AccumPcap(metatiming.IndexPcap, flow.Port, flow.PcapInfo.PckDump)
 			pcaptputwopt.AddTput(ap)
 			xhrtput.AddTput(ax)
 			rrstput.AddTput(ar)
-			err = plotutil.AddLinePoints(pth, analysis.PcapUpTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival))
+			err = plotutil.AddLinePoints(pth, evaluation.PcapUpTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival))
 			/*			err = plotutil.AddLinePoints(p, accp)
 						err = plotutil.AddLinePoints(pr, accr)
 						err = plotutil.AddLinePoints(pth, PcapTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, 0.5))

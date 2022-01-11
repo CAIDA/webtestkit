@@ -2,10 +2,10 @@ package speedofme
 
 import (
 	"bytes"
-	"cloudanalysis/common"
-	"cloudanalysis/savedata"
-	"cloudanalysis/tracelog"
-	"cloudanalysis/tsharkutil"
+	"../common"
+	"../savedata"
+	"../tracelog"
+	"../tsharkutil"
 	"encoding/json"
 	"fmt"
 	"io"

@@ -1,9 +1,9 @@
 package common
 
 import (
-	"cloudanalysis/netlog"
-	"cloudanalysis/tracelog"
-	"cloudanalysis/tsharkutil"
+	"analysis/netlog"
+	"analysis/tracelog"
+	"analysis/tsharkutil"
 )
 
 //basic data structure for all speed test measurement flows

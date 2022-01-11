@@ -1,11 +1,11 @@
 package main
 
 import (
-	"cloudanalysis/comcast"
-	"cloudanalysis/fast"
-	"cloudanalysis/ndt"
-	"cloudanalysis/ookla"
-	"cloudanalysis/speedofme"
+	"analysis/comcast"
+	"analysis/fast"
+	"analysis/ndt"
+	"analysis/ookla"
+	"analysis/speedofme"
 	"flag"
 	"log"
 	"os"

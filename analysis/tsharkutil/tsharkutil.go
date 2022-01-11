@@ -426,9 +426,9 @@ func GetSSLStreamsfromIPs(nameprefix string, hostnameipmap map[string]string, ho
 		"-e", "ip.len",
 		"-e", "tcp.len",
 		"-e", "tcp.window_size",
-		"-e", "tcp.analysis.retransmission",
-		"-e", "tcp.analysis.lost_segment",
-		"-e", "tcp.analysis.out_of_order",
+		"-e", "tcp.evaluation.retransmission",
+		"-e", "tcp.evaluation.lost_segment",
+		"-e", "tcp.evaluation.out_of_order",
 		"-e", "tcp.seq",
 		"-e", "tcp.ack",
 		"-e", "tcp.flags",
@@ -441,7 +441,7 @@ func GetSSLStreamsfromIPs(nameprefix string, hostnameipmap map[string]string, ho
 		"-e", "tcp.flags.reset",
 		"-e", "tcp.flags.push",
 		"-e", "tcp.flags.syn",
-		"-e", "tcp.analysis.fast_retransmission",
+		"-e", "tcp.evaluation.fast_retransmission",
 		"-Y", ipfilters)
 	log.Println(cmd)
 	var out bytes.Buffer
@@ -763,9 +763,9 @@ func GetPckfromStreams(nameprefix string, streamids []int) ([]*PckInfo, map[int]
 		"-e", "ip.len",
 		"-e", "tcp.len",
 		"-e", "tcp.window_size",
-		"-e", "tcp.analysis.retransmission",
-		"-e", "tcp.analysis.lost_segment",
-		"-e", "tcp.analysis.out_of_order",
+		"-e", "tcp.evaluation.retransmission",
+		"-e", "tcp.evaluation.lost_segment",
+		"-e", "tcp.evaluation.out_of_order",
 		"-e", "tcp.seq",
 		"-e", "tcp.ack",
 		"-e", "tcp.flags",
@@ -774,7 +774,7 @@ func GetPckfromStreams(nameprefix string, streamids []int) ([]*PckInfo, map[int]
 		"-e", "tcp.flags.reset",
 		"-e", "tcp.flags.push",
 		"-e", "tcp.flags.syn",
-		"-e", "tcp.analysis.fast_retransmission",
+		"-e", "tcp.evaluation.fast_retransmission",
 		"-Y", stmfilter)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
@@ -809,9 +809,9 @@ func GetSSLPckfromTuples(nameprefix string, srcip, dstip, srcport, dstport strin
 		"-e", "ip.len",
 		"-e", "tcp.len",
 		"-e", "tcp.window_size",
-		"-e", "tcp.analysis.retransmission",
-		"-e", "tcp.analysis.lost_segment",
-		"-e", "tcp.analysis.out_of_order",
+		"-e", "tcp.evaluation.retransmission",
+		"-e", "tcp.evaluation.lost_segment",
+		"-e", "tcp.evaluation.out_of_order",
 		"-e", "tcp.seq",
 		"-e", "tcp.ack",
 		"-e", "tcp.flags",
@@ -824,7 +824,7 @@ func GetSSLPckfromTuples(nameprefix string, srcip, dstip, srcport, dstport strin
 		"-e", "tcp.flags.reset",
 		"-e", "tcp.flags.push",
 		"-e", "tcp.flags.syn",
-		"-e", "tcp.analysis.fast_retransmission",
+		"-e", "tcp.evaluation.fast_retransmission",
 		"-Y", stmfilter)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
@@ -1115,7 +1115,7 @@ func GetHTTPfromStreams(nameprefix string, streamids []int) (map[int]*StreamInfo
 				} else {
 					if request == 0 {
 						//new request on existing stream, persistent HTTP
-						//set the end of previous response, we assume no HTTP pipelining here, unless we analysis the content length. However, this info may be chipped out because of snaplen
+						//set the end of previous response, we assume no HTTP pipelining here, unless we evaluation the content length. However, this info may be chipped out because of snaplen
 						stream.Response[len(stream.Response)-1].FrameEnd = frameno - 1
 						//handle multiple request within one packet
 						hmethodarr := strings.Split(hmethod, ",")
@@ -1223,14 +1223,14 @@ func GetTCPStreamwithRangePcap(nameprefix string, streamno, framestart, frameend
 		"-e", "ip.len",
 		"-e", "tcp.len",
 		"-e", "tcp.window_size",
-		"-e", "tcp.analysis.retransmission",
-		"-e", "tcp.analysis.lost_segment",
-		"-e", "tcp.analysis.out_of_order",
+		"-e", "tcp.evaluation.retransmission",
+		"-e", "tcp.evaluation.lost_segment",
+		"-e", "tcp.evaluation.out_of_order",
 		"-e", "tcp.flags.ack",
 		"-e", "tcp.flags.reset",
 		"-e", "tcp.flags.push",
 		"-e", "tcp.flags.syn",
-		"-e", "tcp.analysis.fast_retransmission",
+		"-e", "tcp.evaluation.fast_retransmission",
 		"-Y", tcpfilter)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
@@ -1301,14 +1301,14 @@ func GetTCPStream(nameprefix string, streamno int) []*PckInfo {
 		"-e", "ip.len",
 		"-e", "tcp.len",
 		"-e", "tcp.window_size",
-		"-e", "tcp.analysis.retransmission",
-		"-e", "tcp.analysis.lost_segment",
-		"-e", "tcp.analysis.out_of_order",
+		"-e", "tcp.evaluation.retransmission",
+		"-e", "tcp.evaluation.lost_segment",
+		"-e", "tcp.evaluation.out_of_order",
 		"-e", "tcp.flags.ack",
 		"-e", "tcp.flags.reset",
 		"-e", "tcp.flags.push",
 		"-e", "tcp.flags.syn",
-		"-e", "tcp.analysis.fast_retransmission",
+		"-e", "tcp.evaluation.fast_retransmission",
 		"-Y", tcpfilter)
 	var out bytes.Buffer
 	var stderr bytes.Buffer

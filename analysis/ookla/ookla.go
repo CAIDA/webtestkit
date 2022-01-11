@@ -2,11 +2,11 @@ package ookla
 
 import (
 	//"bytes"
-	"cloudanalysis/common"
-	"cloudanalysis/netlog"
-	"cloudanalysis/savedata"
-	"cloudanalysis/tracelog"
-	"cloudanalysis/tsharkutil"
+	"../common"
+	"../netlog"
+	"../savedata"
+	"../tracelog"
+	"../tsharkutil"
 	"encoding/json"
 	"net/url"
 

@@ -3,10 +3,10 @@ package ndt
 import (
 	"log"
 	"sync"
-	"cloudanalysis/common"
-	"cloudanalysis/savedata"
-	"cloudanalysis/tracelog"
-	"cloudanalysis/tsharkutil"
+	"analysis/common"
+	"analysis/savedata"
+	"analysis/tracelog"
+	"analysis/tsharkutil"
 )
 
 //type Timeline tracelog.Timeline

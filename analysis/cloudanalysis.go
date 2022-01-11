@@ -2,11 +2,11 @@ package main
 
 import (
 	"bufio"
-	"cloudanalysis/comcast"
-	"cloudanalysis/fast"
-	"cloudanalysis/ndt"
-	"cloudanalysis/ookla"
-	"cloudanalysis/speedofme"
+	"./comcast"
+	"./fast"
+	"./ndt"
+	"./ookla"
+	"./speedofme"
 	"flag"
 	"log"
 	"os"

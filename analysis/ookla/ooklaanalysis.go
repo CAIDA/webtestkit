@@ -1,9 +1,9 @@
 package ookla
 
 import (
-	"cloudanalysis/analysis"
-	"cloudanalysis/common"
-	"cloudanalysis/savedata"
+	"analysis/evaluation"
+	"analysis/common"
+	"analysis/savedata"
 	"log"
 	"os"
 	"strconv"
@@ -114,15 +114,15 @@ func OoklaPlotFlow(filename string, ct common.TestSummary) {
 	ptotal,err := plot.New()
 
 	ival := 0.25
-	pcaptput := analysis.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
-	xtput := analysis.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
+	pcaptput := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
+	xtput := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
 	downcsv := &savedata.SaveCSV{}
 	_ = downcsv.NewCSV(common.Getfilename(filename) + ".down.csv")
 	for _, flow := range measflow {
 		if flow.Rrs.Method == "GET" {
 			log.Println(flow.ReqId, flow.Port, len(flow.Rrs.RrsTimeline))
-			ap := analysis.PcapTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival)
-			ax := analysis.XhrTput(flow.Rrs, flow.XhrTiming, ival)
+			ap := evaluation.PcapTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival)
+			ax := evaluation.XhrTput(flow.Rrs, flow.XhrTiming, ival)
 			for _, pdata := range ap {
 				tmpdata := []string{strconv.FormatFloat(pdata.X, 'f', -1, 64), flow.Host, flow.Port, flow.SrcPort, "1", strconv.FormatFloat(pdata.Y, 'f', -1, 64)}
 				downcsv.AddOneToCSV(tmpdata)
@@ -132,14 +132,14 @@ func OoklaPlotFlow(filename string, ct common.TestSummary) {
 				downcsv.AddOneToCSV(tmpdata)
 			}
 
-			accp := analysis.AccumPcap(metatiming.IndexPcap, flow.Port, flow.PcapInfo.PckDump)
-			accr := analysis.AccumRrs(metatiming.Index, flow.Rrs)
+			accp := evaluation.AccumPcap(metatiming.IndexPcap, flow.Port, flow.PcapInfo.PckDump)
+			accr := evaluation.AccumRrs(metatiming.Index, flow.Rrs)
 			pcaptput.AddTput(ap)
 			xtput.AddTput(ax)
 			err = plotutil.AddLinePoints(p, accp)
 			err = plotutil.AddLinePoints(pr, accr)
-			err = plotutil.AddLinePoints(pth, analysis.PcapTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival))
-			err = plotutil.AddLinePoints(pxth, analysis.XhrTput(flow.Rrs, flow.XhrTiming, ival))
+			err = plotutil.AddLinePoints(pth, evaluation.PcapTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival))
+			err = plotutil.AddLinePoints(pxth, evaluation.XhrTput(flow.Rrs, flow.XhrTiming, ival))
 			if len(accp) > 0 && len(accr) > 0 {
 				factor := float64(len(accr)) / float64(len(accp))
 				log.Println("Pcap:", len(accp), "rrs:", len(accr), factor)
@@ -250,17 +250,17 @@ func OoklaPlotUpload(filename string, ct OoklaTest) {
 	pth,err := plot.New()
 
 	ival := 0.25
-	pcaptputwopt := analysis.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
-	xhrtput := analysis.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
+	pcaptputwopt := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
+	xhrtput := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
 
-	rrstput := analysis.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
+	rrstput := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
 	downcsv := &savedata.SaveCSV{}
 	_ = downcsv.NewCSV(common.Getfilename(filename) + ".up.csv")
 	for _, flow := range measflow {
 		if flow.DownUp == 1 {
-			ap := analysis.PcapUpTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival)
-			ax := analysis.XhrUpTput(metatiming.IndexPcap, metatiming.Index, flow.Port, flow.PcapInfo, flow.XhrTiming, ival)
-			ar := analysis.RrsUpTput(metatiming.IndexPcap, metatiming.Index, flow.Port, flow.PcapInfo, flow.Rrs.Timing, flow.Rrs.ReqTs, flow.Rrs.RespTs, ival)
+			ap := evaluation.PcapUpTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival)
+			ax := evaluation.XhrUpTput(metatiming.IndexPcap, metatiming.Index, flow.Port, flow.PcapInfo, flow.XhrTiming, ival)
+			ar := evaluation.RrsUpTput(metatiming.IndexPcap, metatiming.Index, flow.Port, flow.PcapInfo, flow.Rrs.Timing, flow.Rrs.ReqTs, flow.Rrs.RespTs, ival)
 			for _, pdata := range ap {
 				tmpdata := []string{strconv.FormatFloat(pdata.X, 'f', -1, 64), flow.Host, flow.Port, flow.SrcPort, "1", strconv.FormatFloat(pdata.Y, 'f', -1, 64)}
 				downcsv.AddOneToCSV(tmpdata)
@@ -275,7 +275,7 @@ func OoklaPlotUpload(filename string, ct OoklaTest) {
 			pcaptputwopt.AddTput(ap)
 			xhrtput.AddTput(ax)
 			rrstput.AddTput(ar)
-			err = plotutil.AddLinePoints(pth, analysis.PcapUpTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival))
+			err = plotutil.AddLinePoints(pth, evaluation.PcapUpTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival))
 			/*			err = plotutil.AddLinePoints(p, accp)
 						err = plotutil.AddLinePoints(pr, accr)
 						err = plotutil.AddLinePoints(pth, PcapTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, 0.5))
@@ -320,7 +320,7 @@ func OoklaPlotUpload(filename string, ct OoklaTest) {
 
 }
 
-/* moved to analysis.go
+/* moved to evaluation.go
 func AccumRrs(index int64, rrsflow tracelog.FlowDetail) plotter.XYs {
 	var accrrsvalue float64
 	accrrsvalue = 0

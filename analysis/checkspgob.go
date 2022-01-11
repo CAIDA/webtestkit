@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cloudanalysis/ookla"
+	"./ookla"
 	"flag"
 	"fmt"
 	"io/ioutil"

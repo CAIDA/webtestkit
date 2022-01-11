@@ -1,12 +1,12 @@
-package analysis
+package evaluation
 
 import (
 	"log"
 	"math"
 	"strconv"
 
-	"cloudanalysis/tracelog"
-	"cloudanalysis/tsharkutil"
+	"analysis/tracelog"
+	"analysis/tsharkutil"
 
 	"gonum.org/v1/plot/plotter"
 )

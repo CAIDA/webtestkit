@@ -3,9 +3,9 @@ package ndt
 import (
 	"log"
 	"strconv"
-	"cloudanalysis/analysis"
-	"cloudanalysis/common"
-	"cloudanalysis/savedata"
+	"analysis/evaluation"
+	"analysis/common"
+	"analysis/savedata"
 
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
@@ -20,13 +20,13 @@ func NdtPlotFlow(filename string, ct NdtTest) {
 	ptotal, err := plot.New()
 
 	ival := 0.05
-	pcaptput := analysis.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
+	pcaptput := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
 	downcsv := &savedata.SaveCSV{}
 	_ = downcsv.NewCSV(common.Getfilename(filename) + ".down.csv")
 	for _, flow := range measflow {
 		if flow.DownUp == 0 {
 			log.Println("Flow th", flow.SrcPort)
-			ap := analysis.PcapTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival)
+			ap := evaluation.PcapTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival)
 			for _, pdata := range ap {
 				tmpdata := []string{strconv.FormatFloat(pdata.X, 'f', -1, 64), flow.Host, flow.Port, flow.SrcPort, "1", strconv.FormatFloat(pdata.Y, 'f', -1, 64)}
 				downcsv.AddOneToCSV(tmpdata)
@@ -58,13 +58,13 @@ func NdtPlotUpload(filename string, ct NdtTest) {
 	p, err := plot.New()
 
 	ival := 0.05
-	pcaptputwopt := analysis.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
+	pcaptputwopt := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
 
 	upcsv := &savedata.SaveCSV{}
 	_ = upcsv.NewCSV(common.Getfilename(filename) + ".upload.csv")
 	for _, flow := range measflow {
 		if flow.DownUp == 1 {
-			ap := analysis.PcapUpTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival)
+			ap := evaluation.PcapUpTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival)
 			//		log.Println("upload flow", flow.Port, len(flow.PcapInfo.PckDump), ap, ax)
 			//accp := AccumPcap(metatiming.IndexPcap, flow.Port, flow.PcapInfo.PckDump)
 			pcaptputwopt.AddTput(ap)

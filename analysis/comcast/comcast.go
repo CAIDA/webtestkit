@@ -1,11 +1,11 @@
 package comcast
 
 import (
-	"cloudanalysis/common"
-	"cloudanalysis/netlog"
-	"cloudanalysis/savedata"
-	"cloudanalysis/tracelog"
-	"cloudanalysis/tsharkutil"
+	"analysis/common"
+	"analysis/netlog"
+	"analysis/savedata"
+	"analysis/tracelog"
+	"analysis/tsharkutil"
 	"encoding/json"
 	"log"
 	"net/url"
