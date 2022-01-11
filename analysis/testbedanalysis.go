@@ -1,11 +1,11 @@
 package main
 
 import (
-	"./comcast"
-	"./fast"
-	"./ndt"
-	"./ookla"
-	"./speedofme"
+	"analysis/comcast"
+	"analysis/fast"
+	"analysis/ndt"
+	"analysis/ookla"
+	"analysis/speedofme"
 	"flag"
 	"log"
 	"os"

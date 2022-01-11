@@ -21,11 +21,20 @@ Web-based speed test platforms are popular among end-users for measuring their a
 
 3. __Install Golang__
 
-    Follow the steps describted here:
+    Follow the steps described here:
     ```bash
     https://go.dev/doc/install
     ```
+4. __Install gonum__
 
+    Follow the steps decribed here:
+    ```bash
+    https://go.dev/doc/install
+    ```
+    First, using go get:
+        ```
+        go get -u gonum.org/v1/gonum/...
+        ```      
 ## System components
 
 * __servercrawling module__
