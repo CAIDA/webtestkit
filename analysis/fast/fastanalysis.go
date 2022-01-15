@@ -40,7 +40,7 @@ func FastPlotRRTime(filename string, metatiming *FastMetaTiming, measflow map[st
 			}
 		}
 	}
-	p, err := plot.New()
+	p := plot.New()
 	//if err != nil {
 	//	log.Fatal(err)
 	//}
@@ -65,7 +65,7 @@ func FastPlotRRTime(filename string, metatiming *FastMetaTiming, measflow map[st
 	if err := p.Save(4*vg.Inch, 5*vg.Inch, rrtimename); err != nil {
 		log.Fatal(err)
 	}
-	pcdf,err := plot.New()
+	pcdf := plot.New()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -96,15 +96,13 @@ func FastPlotFlow(filename string, ct FastTest) {
 	var err error
 	metatiming := ct.Meta
 	measflow := ct.Flowmap
-	p, err := plot.New()
-	pr, err := plot.New()
-	pth, err:= plot.New()
-	pxth, err := plot.New()
-	ptotal, err := plot.New()
+	p := plot.New()
+	pr := plot.New()
+	pth := plot.New()
+	pxth := plot.New()
+	ptotal := plot.New()
 
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
+
 	ival := 0.05
 	pcaptput := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
 	xtput := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
@@ -208,32 +206,16 @@ func FastPlotFlow(filename string, ct FastTest) {
 	if _, err := img.WriteTo(w); err != nil {
 		log.Fatal(err)
 	}
-	/*
-		if err := p.Save(10*vg.Inch, 4*vg.Inch, thname); err != nil {
-			log.Fatal(err)
-		}
-		if err := pr.Save(10*vg.Inch, 4*vg.Inch, rthname); err != nil {
-			log.Fatal(err)
-		}
-		if err := pth.Save(10*vg.Inch, 4*vg.Inch, pthname); err != nil {
-			log.Fatal(err)
-		}
-		if err := pxth.Save(10*vg.Inch, 4*vg.Inch, xthname); err != nil {
-			log.Fatal(err)
-		}
-		if err := ptotal.Save(10*vg.Inch, 4*vg.Inch, totalthname); err != nil {
-			log.Fatal(err)
-		}
-	*/
+
 }
 
 func FastPlotUpload(filename string, ct FastTest) {
 	var err error
 	metatiming := ct.Meta
 	measflow := ct.Flowmap
-	p, err:= plot.New()
+	p := plot.New()
 
-	pth, err:= plot.New()
+	pth := plot.New()
 	//if err != nil {
 	//	log.Fatal(err)
 	//}
@@ -309,114 +291,4 @@ func FastPlotUpload(filename string, ct FastTest) {
 
 }
 
-/*
 
-move to evaluation.go
-func AccumRrs(index int64, rrsflow tracelog.FlowDetail) plotter.XYs {
-	var accrrsvalue float64
-	accrrsvalue = 0
-	tsxy := make(plotter.XYs, len(rrsflow.RrsTimeline))
-	tsxy = append(tsxy, plotter.XY{X: float64(rrsflow.ReqTs) / 1000000, Y: accrrsvalue})
-	for _, tsline := range rrsflow.RrsTimeline {
-		accrrsvalue += tsline.Length
-		tsxy = append(tsxy, plotter.XY{X: float64(tsline.Ts) / 1000000, Y: accrrsvalue})
-	}
-	//log.Printf("Rrs %v\n", tsxy)
-	return tsxy
-}
-
-func AccumPcap(indexts float64, dstport string, pckinfo []*tsharkutil.PckInfo) plotter.XYs {
-	var accpcapvalue float64
-	if len(pckinfo) == 0 {
-		return plotter.XYs{}
-	}
-	accpcapvalue = 0
-	dport, _ := strconv.Atoi(dstport)
-	tsxy := make(plotter.XYs, len(pckinfo))
-	tsxy = append(tsxy, plotter.XY{X: float64(pckinfo[0].Ts - indexts), Y: 0})
-	for _, pck := range pckinfo {
-		//downlink
-		if pck.SrcPort == dport {
-			accpcapvalue += float64(pck.TcpLen)
-			tsxy = append(tsxy, plotter.XY{X: pck.Ts - indexts, Y: accpcapvalue})
-		}
-	}
-	//log.Printf("Pcap %v\n", tsxy)
-	return tsxy
-}
-
-//return Mbps
-func PcapTput(indexts float64, dstport string, stream tsharkutil.StreamPcap, interval float64) plotter.XYs {
-	dport, _ := strconv.Atoi(dstport)
-	downth, _ := tsharkutil.Throughput(indexts, dport, stream, interval)
-	if downth != nil {
-		tsxy := make(plotter.XYs, 0)
-		for _, th := range downth {
-			tsxy = append(tsxy, plotter.XY{X: th.STs - indexts, Y: th.Tput / 1000000})
-
-		}
-		return tsxy
-	} else {
-		return plotter.XYs{}
-	}
-
-}
-
-func (otput *OverallTput) AddTput(fthput plotter.XYs) {
-	otput.FlowsTput = append(otput.FlowsTput, fthput)
-}
-
-func (otput *OverallTput) TotalTput() plotter.XYs {
-	if otput.Interval == 0 {
-		otput.Interval = 1
-	}
-	var alltput plotter.XYs
-
-	for fidx, f := range otput.FlowsTput {
-		//first flow, just copy
-		if fidx == 0 {
-			alltput, _ = plotter.CopyXYs(f)
-		} else {
-			for _, fbin := range f {
-				xbin := math.Floor(fbin.X / otput.Interval)
-				inserted := false
-				for i := 0; i < alltput.Len(); i++ {
-					if xbin == math.Floor(alltput[i].X/otput.Interval) {
-						alltput[i].Y += fbin.Y
-						inserted = true
-						break
-					} else if math.Floor(alltput[i].X/otput.Interval) > xbin {
-						//need to insert a new bin ahead of it
-						alltput = append(alltput, plotter.XY{})
-						copy(alltput[i+1:], alltput[i:])
-						alltput[i] = fbin
-						inserted = true
-						break
-						//						alltput = append(alltput[:i-1], fbin,alltput[i:])
-					}
-
-				}
-				if !inserted {
-					//append to the end
-					alltput = append(alltput, fbin)
-				}
-			}
-		}
-	}
-	return alltput
-}
-
-func XhrTput(flow tracelog.FlowDetail, interval float64) plotter.XYs {
-	th := tracelog.XhrThput(flow, interval)
-	if th != nil {
-		tsxy := make(plotter.XYs, 0)
-		for _, tvalue := range th {
-			tsxy = append(tsxy, plotter.XY{X: tvalue.STs, Y: tvalue.Tput / 1000000})
-		}
-		return tsxy
-	} else {
-		return plotter.XYs{}
-	}
-}
-
-*/

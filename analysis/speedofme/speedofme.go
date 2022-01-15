@@ -2,10 +2,10 @@ package speedofme
 
 import (
 	"bytes"
-	"../common"
-	"../savedata"
-	"../tracelog"
-	"../tsharkutil"
+	"analysis/common"
+	"analysis/savedata"
+	"analysis/tracelog"
+	"analysis/tsharkutil"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -545,100 +545,7 @@ func LoadSpeed(globalwg *sync.WaitGroup, wchan chan int, filepath string) SpeedT
 			}
 		}
 	}
-	//ricky mod ends here
-	/*
-		Download_num := 0
-		for _, m := range measflowmap {
-			log.Println(m.Url, m.Len, m.XhrTiming)
-			if m.DownUp == 0 {
-				Download_num++
-			}
-		}
 
-		//get the stream id of upload/download flows
-
-		streamidmap, allstreampcks, pck_num := tsharkutil.HTTPSStream(filepath, Download_num)
-		for _, a := range allstreampcks {
-			log.Println("first pack in each stream")
-			log.Println(a[0])
-
-		}
-
-		//streamidmap, streamurimap := tsharkutil.HTTPRequestStream(filepath, []string{"downloads", "uploads"})
-		streams := []int{}
-		for k, _ := range streamidmap {
-			streams = append(streams, k)
-		}
-
-		log.Println(streams)
-		log.Println("Total number of streams:", len(allstreampcks))
-
-		//	upstream := tsharkutil.HTTPRequestStream(filepath, "uploads")
-		//	streamids := []tsharkutil.StreamInfo{}
-		//	streamids = append(streamids, dlstream...)
-		//streamids = append(streamids, upstream...)
-
-		//	log.Println(len(dlstream), len(upstream), len(streamids))
-		//	log.Println(streamids)
-		//var wg sync.WaitGroup
-
-		//
-		//var wg sync.WaitGroup
-		workers := make(chan int, 1)
-
-		type sortmap struct {
-			request_id string
-			Length     int
-			Downup     int
-		}
-		keys := make([]sortmap, 0)
-
-		for request_id, k := range measflowmap {
-			if k.Rrs.Method == "OPTIONS" {
-				k.DownUp = +100
-
-			}
-			keys = append(keys, sortmap{request_id, k.Len, k.DownUp})
-		}
-
-		sort.Slice(keys, func(i, j int) bool {
-			if keys[i].Downup < keys[j].Downup {
-				return true
-			}
-			if keys[i].Downup > keys[j].Downup {
-				return false
-			}
-			if keys[i].Downup == 0 {
-				return keys[i].request_id < keys[j].request_id
-			} else {
-				return keys[i].Length < keys[j].Length
-
-			}
-
-		})
-		log.Println("down with sorting measmap", keys)
-		for index, flow_key := range keys {
-			log.Println(index)
-			mflow := measflowmap[flow_key.request_id]
-			workers <- 1
-			if _, err := streamidmap[index]; err {
-				if streamidmap[index].StreamLen > 0 {
-					mflow.Port = strconv.Itoa(allstreampcks[index][0].DstPort)
-					mflow.SrcPort = strconv.Itoa(allstreampcks[index][0].SrcPort)
-					mflow.DstIp = allstreampcks[index][0].DstIp
-					mflow.Host = mflow.DstIp
-					mflow.PcapInfo.StreamId = index
-					mflow.PcapInfo.Request = &streamidmap[index].Request[0]
-					mflow.PcapInfo.Response = &streamidmap[index].Response[0]
-					//				log.Println("Request:", mflow.PcapInfo.Request)
-
-					mflow.PcapInfo.PckDump = allstreampcks[index]
-				}
-			}
-
-			<-workers
-		}
-	*/
 	//wait until all go routine finished
 	//allocate downup to allrtts
 	for rand_id, _ := range measflowmap {
@@ -717,19 +624,11 @@ func ParseSpeedURL(u string) (downup int, urls []string) {
 
 			downup = 1 //upload
 
-			//log.Println(upload_req)
-			//urlobj = append(urlobj, "8192") //upload size: 8192k
-			//urlobj = append(urlobj, upload_req)
-
 		} else {
 			downup = 2 //head
 			urlobj = preUrlRegex.FindStringSubmatch(u)
 		}
 	}
-	//if urlobj != nil {  //download
-	//	urlobj[2] = strings.TrimSpace(urlobj[2]) //get rid of space
-	//	log.Println(urlobj)
-	//}
 	return downup, urlobj
 }
 

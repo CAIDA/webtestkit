@@ -16,63 +16,7 @@ import (
 	"sync"
 )
 
-//type Timeline tracelog.Timeline
-//type FlowDetail tracelog.FlowDetail
 
-/*type Timeline struct {
-	Ts     int64
-	Length float64
-}
-
-type FlowDetail struct {
-	ReqTs       int64
-	RespTs      int64
-	Method      string
-	StatusCode  int
-	Priority    string
-	Timing      tracelog.RespTiming
-	RrsTimeline []Timeline
-}
-
-type ComcastMeasFlow struct {
-	Url         string
-	Host        string
-	Port        string
-	SrcPort     string
-	DstIp       string
-	ReqId       string
-	RangeLen    int
-	Random      string
-	OptionReqId string
-	DownUp      int
-	Rrs         tracelog.FlowDetail
-	XhrTiming   tracelog.XhrFlow
-	PcapInfo    tsharkutil.StreamPcap
-}
-*/
-//create a tmp place before we can see resource request
-/*type XhrMeta struct {
-	ReqId  string
-	Unsent int64
-	Opened int64
-}*/
-/*
-type ComcastMetaTiming struct {
-	Index         int64
-	IndexPcap     float64
-	DownloadStart int64
-	DownloadEnd   int64
-	UploadStart   int64
-	UploadEnd     int64
-}
-
-type ComcastTest struct {
-	Meta            *ComcastMetaTiming
-	Flowmap         map[string]*ComcastMeasFlow
-	CounterTimeline []*tracelog.Counters
-	pck_num         int
-}
-*/
 type TLSLeftOver struct {
 	FrameNo  int
 	PckKey   int
@@ -105,7 +49,6 @@ var hostports []string = []string{}
 var hostipmap map[string]string
 
 func LoadComcast(globwg *sync.WaitGroup, wchan chan int, filepath string) common.TestSummary {
-	//	filepath := `/home/cskpmok/webspeedtestdata/US1/comcast/comcast_1539367807.json`
 	log.Println("working on ", filepath)
 	fileinfo := common.CheckDataFiles(filepath)
 	metatiming := common.MetaTiming{}
@@ -184,8 +127,7 @@ func LoadComcast(globwg *sync.WaitGroup, wchan chan int, filepath string) common
 		}
 		log.Println("Done with Trace.", mlen)
 	}
-	//var allrtts map[int]*tsharkutil.RTT_Stream
-	//var allpck_lost map[int]*tsharkutil.LostStream
+
 	var allsslpcks int
 	if fileinfo.PcapExist {
 		allrtts, allpck_lost, allpcks := loadpcap(fileinfo, &metatiming, measflowmap, allmflows)
@@ -201,12 +143,7 @@ func LoadComcast(globwg *sync.WaitGroup, wchan chan int, filepath string) common
 		}
 
 	}
-	/*
-		for _, mv := range measflowmap {
-			log.Println(mv.Url)
-			log.Println(mv.Random, mv.ReqId, mv.Rrs.Method, mv.Rrs.ReqTs, mv.XhrTiming)
-		}S
-	*/
+
 	//get the timestamp of sending the DNS request
 	//save data
 	alldata := common.TestSummary{SourceFiles: fileinfo, Meta: &metatiming, Flows: allmflows, Flowmap: measflowmap, CounterTimeline: cnttimeline, PckNum: allsslpcks}
@@ -214,42 +151,7 @@ func LoadComcast(globwg *sync.WaitGroup, wchan chan int, filepath string) common
 	if err != nil {
 		log.Fatal(err)
 	}
-	/*
-		var buf bytes.Buffer
-
-		enc := json.NewEncoder(&buf)
-		enc.Encode(allpck_lost)
-		paths := strings.Split(filepath, ".")
-		lostPath := paths[0] + ".lost.json"
-		f, erro := os.OpenFile(lostPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-		if erro != nil {
-			log.Println(erro)
-		}
-
-		n, err := io.WriteString(f, buf.String())
-		if err != nil {
-			log.Println(n, err)
-		}
-
-
-
-		var buf1 bytes.Buffer
-
-		enc1 := json.NewEncoder(&buf1)
-		enc1.Encode(allrtts)
-		RttPath := paths[0] + ".rtt.json"
-		f1, erro1 := os.OpenFile(RttPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-		if erro1 != nil {
-			log.Println(erro1)
-		}
-
-		n1, err1 := io.WriteString(f1, buf.String())
-		if err1 != nil {
-			log.Println(n1, err1)
-		}
-	*/
 	return alldata
-	//	log.Println(metatiming)
 }
 
 func DecryptAnalysis(nameprefix string, cmtest *common.TestSummary) {
@@ -810,28 +712,9 @@ func loadtrace(tracech chan tracelog.PerfLog, metatiming *common.MetaTiming, mea
 							for _, rurl := range rmap {
 								if rurl.XhrTiming.Opened != 0 && rurl.XhrTiming.Header == 0 {
 									rurl.XhrTiming.Header = ets
-									/*if rurl.Rrs.Method == "OPTIONS" {
-										tmpts = rurl.XhrTiming.Opened
-									}else{
-										if rurl.Rrs.Method == "POST" && tmpts > 0 {
-											log.Println("Add back opents", rurl.ReqId)
-											rurl.XhrTiming.Opened = tmpts
-											tmpts = 0
-										}
-										rurl.XhrTiming.Header = ets
-										break
 
-									}*/
 
 								}
-								//								rurl.XhrTiming.Header = ets
-								/*if rurl.XhrTiming.Header == 0 && len(rurl.XhrTiming.Loading) == 0 {
-									rurl.XhrTiming.Header = ets
-								}
-								if rurl.Rrs.Method == "POST" && tmpts > 0 {
-									//back fill open ts
-									rurl.XhrTiming.Opened = tmpts
-								}*/
 							}
 						}
 					case 3:
@@ -1244,23 +1127,6 @@ func loadpcap(fileinfo *common.FilePaths, metatiming *common.MetaTiming, measflo
 							log.Println("Flowdone", assignedstream)
 							break
 						}
-						/*						if revoke {
-													log.Println("Revoke ", assignedstream)
-													assignedstream = 0
-													accumdatalen = 0
-
-													startreqseq = 0
-													curreqseq = 0
-													startrespseq = 0
-													currespseq = 0
-													revokeassignment(curflow, pendingpck)
-													//do it all over again
-													pckkey = -1
-													revoke = false
-													flowdone = false
-													confirmed = false
-												}
-						*/
 					}
 				}
 			}
@@ -1289,118 +1155,3 @@ func loadpcap(fileinfo *common.FilePaths, metatiming *common.MetaTiming, measflo
 	log.Println("Done with tshark")
 	return allrtts, allpck_lost, allpcks_len
 }
-
-// Old algorithm for old version of comcast (based on HTTP)
-//	log.Println(len(dlstream), len(upstream), len(streamids))
-////	log.Println(streamids)
-//var wg sync.WaitGroup
-//workers := make(chan int, 1)
-//for _, mflow := range measflowmap {
-//	workers <- 1
-//	wg.Add(1)
-//	go func(cm *ComcastMeasFlow) {
-//		u, err := url.Parse(cm.Url)
-//		defer wg.Done()
-//		if err != nil {
-//			log.Fatal(err)
-//		}
-//		if suri, sexist := streamurimap[u.RequestURI()]; sexist {
-//			for _, pflows := range suri {
-//				log.Println("Working on:", pflows.StreamId, cm.Rrs.Method, streamidmap[pflows.StreamId].Request[pflows.ReqIdx].Method, u.RequestURI())
-//				if streamidmap[pflows.StreamId].Request[pflows.ReqIdx].Method == cm.Rrs.Method {
-//					cm.PcapInfo.StreamId = pflows.StreamId
-//					cm.PcapInfo.Request = &streamidmap[pflows.StreamId].Request[pflows.ReqIdx]
-//					cm.PcapInfo.Response = &streamidmap[pflows.StreamId].Response[pflows.ReqIdx]
-//					cm.PcapInfo.PckDump = tsharkutil.GetTCPStreamwithRange(allsslpcks, pflows.StreamId, streamidmap[pflows.StreamId].Request[pflows.ReqIdx].FrameNum, streamidmap[pflows.StreamId].Response[pflows.ReqIdx].FrameEnd)
-//					log.Println("Request:", cm.PcapInfo.Request, "Response:", cm.PcapInfo.Response, len(cm.PcapInfo.PckDump))
-//					if cm.PcapInfo.Request.Ts == 0 {
-//						//we cannot find the request using tshark
-//						dport, _ := strconv.Atoi(cm.Port)
-//						for _, p := range cm.PcapInfo.PckDump {
-//							if p.DstPort == dport && p.TcpLen > 0 {
-//								cm.PcapInfo.Request.Ts = p.Ts
-//								cm.PcapInfo.Request.FrameNum = p.FrameNo
-//								break
-//							}
-//						}
-//					} else if cm.PcapInfo.Response.Ts == 0 {
-//						dport, _ := strconv.Atoi(cm.Port)
-//						for _, p := range cm.PcapInfo.PckDump {
-//							if p.SrcPort == dport && p.TcpLen > 0 {
-//								cm.PcapInfo.Response.Ts = p.Ts
-//								cm.PcapInfo.Response.FrameNum = p.FrameNo
-//								break
-//							}
-//						}
-//					}
-//					if len(cm.PcapInfo.PckDump) > 0 {
-//						dport, _ := strconv.Atoi(cm.Port)
-//						if cm.PcapInfo.PckDump[0].DstPort == dport {
-//							cm.DstIp = cm.PcapInfo.PckDump[0].DstIp
-//							cm.SrcPort = strconv.Itoa(cm.PcapInfo.PckDump[0].SrcPort)
-//						} else {
-//							cm.DstIp = cm.PcapInfo.PckDump[0].SrcIp
-//							cm.SrcPort = strconv.Itoa(cm.PcapInfo.PckDump[0].DstPort)
-//						}
-//					}
-//
-//					//						log.Println("Framestart", pflows.StreamId, streamidmap[pflows.StreamId].Request[pflows.ReqIdx].FrameNum, streamidmap[pflows.StreamId].Response[pflows.ReqIdx].FrameNum, streamidmap[pflows.StreamId].Response[pflows.ReqIdx].FrameEnd, len(cm.PckDump))
-//					break
-//				}
-//			}
-//		}
-//		<-workers
-//	}(mflow)
-//	/*		go func(stm *tsharkutil.StreamInfo) {
-//				log.Println(stm.Uri)
-//				rid := ParseComcastURI(stm.Uri)
-//				log.Println(rid)
-//				if rmap, exist := randreqidmap[rid]; exist {
-//					defer wg.Done()
-//					log.Println("Run Tshark on stream ", stm.StreamId)
-//					rmap.PckDump = tsharkutil.GetTCPStream(filepath, stm.StreamId)
-//					<-workers
-//				} else {
-//					log.Println("rand no exist")
-//				}
-//			}(stm)
-//	*/
-//}
-////wait until all go routine finished
-//wg.Wait()
-//
-////allocate downup to allrtts
-//for rand_id,_:=range measflowmap{
-//	flow,ok:= measflowmap[rand_id]
-//	if ok{
-//		stream_id := flow.PcapInfo.StreamId
-//		if _,ok := allrtts[stream_id];ok{
-//			log.Println("meaflow",measflowmap[rand_id].DownUp)
-//			allrtts[stream_id].Downup = !(measflowmap[rand_id].DownUp==0) //convert int to bool
-//			allpck_lost[stream_id].Downup = allrtts[stream_id].Downup
-//			allpck_lost[stream_id].TStart  = allrtts[stream_id].TStart
-//			allpck_lost[stream_id].TEnd = allrtts[stream_id].TEnd
-//			//true: up; false: down
-//		}
-//	}
-//}
-//
-//
-//log.Println("Done with tshark")
-////	for rid, flow := range measflowmap {
-///*	var bytesize []float64
-//	var downtcpsize []float64
-//	var uptcpsize []float64
-//	for _, b := range flow.Rrs.RrsTimeline {
-//		bytesize = append(bytesize, b.Length)
-//	}
-//	for _, pb := range flow.PcapInfo.PckDump {
-//		//uplink
-//		if pb.SrcIp == cip {
-//			uptcpsize = append(uptcpsize, float64(pb.TcpLen))
-//		} else {
-//			downtcpsize = append(downtcpsize, float64(pb.TcpLen))
-//		}
-//	}
-//	log.Println(len(flow.PcapInfo.PckDump), len(flow.Rrs.RrsTimeline), floats.Sum(bytesize), floats.Sum(downtcpsize), floats.Sum(uptcpsize))
-//}*/

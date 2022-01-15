@@ -17,7 +17,7 @@ import (
 func NdtPlotFlow(filename string, ct NdtTest) {
 	metatiming := ct.Meta
 	measflow := ct.Flowmap
-	ptotal, err := plot.New()
+	ptotal := plot.New()
 
 	ival := 0.05
 	pcaptput := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
@@ -39,7 +39,7 @@ func NdtPlotFlow(filename string, ct NdtTest) {
 		}
 	}
 	_ = downcsv.CloseCSV()
-	err = plotutil.AddLinePoints(ptotal, "Pcap", pcaptput.TotalTput())
+	err := plotutil.AddLinePoints(ptotal, "Pcap", pcaptput.TotalTput())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func NdtPlotFlow(filename string, ct NdtTest) {
 func NdtPlotUpload(filename string, ct NdtTest) {
 	metatiming := ct.Meta
 	measflow := ct.Flowmap
-	p, err := plot.New()
+	p := plot.New()
 
 	ival := 0.05
 	pcaptputwopt := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
@@ -85,7 +85,7 @@ func NdtPlotUpload(filename string, ct NdtTest) {
 						}*/
 		}
 	}
-	err = plotutil.AddLinePoints(p, "pcap", pcaptputwopt.TotalTput())
+	err := plotutil.AddLinePoints(p, "pcap", pcaptputwopt.TotalTput())
 	log.Println(pcaptputwopt.TotalTput())
 	_ = upcsv.CloseCSV()
 	if err != nil {

@@ -9,23 +9,7 @@ import (
 	"analysis/tsharkutil"
 )
 
-//type Timeline tracelog.Timeline
-//type FlowDetail tracelog.FlowDetail
 
-/*type Timeline struct {
-	Ts     int64
-	Length float64
-}
-
-type FlowDetail struct {
-	ReqTs       int64
-	RespTs      int64
-	Method      string
-	StatusCode  int
-	Priority    string
-	Timing      tracelog.RespTiming
-	RrsTimeline []Timeline
-}*/
 
 type NdtMeasFlow struct {
 	//	Url     string
@@ -170,30 +154,3 @@ func RunNdtAnalysis(globwg *sync.WaitGroup, wchan chan int, filepath string) {
 	<-wchan
 }
 
-/*
-func ParseComcastURL(u string) (downup int, urls []string) {
-	var urlobj []string
-	downup = 0
-	if urlobj = downloadUrlRegex.FindStringSubmatch(u); urlobj == nil {
-		urlobj = uploadUrlRegex.FindStringSubmatch(u)
-		if urlobj != nil {
-			downup = 1
-		}
-	}
-	if urlobj != nil {
-		urlobj[3] = strings.TrimSpace(urlobj[3])
-		//log.Println(urlobj)
-	}
-	return downup, urlobj
-}
-
-func ParseComcastURI(u string) (r string) {
-	var uriobj []string
-	if uriobj = downloadUriRegex.FindStringSubmatch(u); uriobj == nil {
-		uriobj = uploadUriRegex.FindStringSubmatch(u)
-		if uriobj == nil {
-			log.Fatal("URI not match", u)
-		}
-	}
-	return strings.TrimSpace(uriobj[1])
-}*/

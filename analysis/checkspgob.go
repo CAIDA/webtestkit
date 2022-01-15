@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./ookla"
+	"analysis/ookla"
 	"flag"
 	"fmt"
 	"io/ioutil"

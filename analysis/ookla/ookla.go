@@ -1,43 +1,20 @@
 package ookla
 
 import (
-	//"bytes"
-	"../common"
-	"../netlog"
-	"../savedata"
-	"../tracelog"
-	"../tsharkutil"
+	"analysis/common"
+	"analysis/netlog"
+	"analysis/savedata"
+	"analysis/tracelog"
+	"analysis/tsharkutil"
 	"encoding/json"
 	"net/url"
-
-	//"io"
 	"log"
-	//"math"
-	//"os"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 )
-
-//type Timeline tracelog.Timeline
-//type FlowDetail tracelog.FlowDetail
-
-/*type Timeline struct {
-	Ts     int64
-	Length float64
-}
-
-type FlowDetail struct {
-	ReqTs       int64
-	RespTs      int64
-	Method      string
-	StatusCode  int
-	Priority    string
-	Timing      tracelog.RespTiming
-	RrsTimeline []Timeline
-}*/
 
 type OoklaMeasFlow struct {
 	Url         string
@@ -47,7 +24,6 @@ type OoklaMeasFlow struct {
 	DstIp       string
 	ReqId       string
 	OptionReqId string
-	//	Random    string
 	RangeLen  int
 	DownUp    int
 	Rrs       tracelog.FlowDetail
@@ -55,12 +31,6 @@ type OoklaMeasFlow struct {
 	PcapInfo  tsharkutil.StreamPcap
 }
 
-//create a tmp place before we can see resource request
-/*type XhrMeta struct {
-	ReqId  string
-	Unsent int64
-	Opened int64
-}*/
 
 type TLSLeftOver struct {
 	FrameNo  int
@@ -131,9 +101,9 @@ func compareRange(accdata uint, rangelen, progresslen int, tls_overhead int) int
 		//smaller than 1 TCP packet, accept anything that can fit in 1 packet
 		return 0
 	} else {
-		//adjustedrlen := uint((5+24)*progresslen + rangelen)
+		// adjustedrlen := uint((5+24)*progresslen + rangelen)
 		adjustedrlen := uint((tmp_tls_overhead)*progresslen + rangelen)
-		//		errp := float64((accdata - adjustedrlen)) / float64(adjustedrlen)
+		// errp := float64((accdata - adjustedrlen)) / float64(adjustedrlen)
 
 		if accdata < adjustedrlen {
 			return -1
@@ -141,18 +111,11 @@ func compareRange(accdata uint, rangelen, progresslen int, tls_overhead int) int
 			log.Println("Exact match", adjustedrlen)
 			return 0
 		} else {
-			//accumluated data more than expected, and exceed margine
+			// accumluated data more than expected, and exceed margine
 			log.Println("accdata > adjustedrlen", accdata, adjustedrlen)
 			return int(accdata - adjustedrlen)
-			//return 1
 		}
-
-		/*errp := math.Abs(float64((accdata - rangelen))) / float64(rangelen)
-		if errp > errbound {
-			return false
-		}*/
 	}
-	return -1
 }
 
 func headerLength(header []string) int {
@@ -161,7 +124,6 @@ func headerLength(header []string) int {
 }
 
 func LoadOokla(globwg *sync.WaitGroup, wchan chan int, filepath string, toverify bool) common.TestSummary {
-	//	filepath := `/home/cskpmok/webspeedtestdata/US1/comcast/comcast_1539367807.json`
 	log.Println("working on ", filepath)
 	fileinfo := common.CheckDataFiles(filepath)
 	//msgch := make(chan tracelog.PerfLog)
@@ -172,7 +134,6 @@ func LoadOokla(globwg *sync.WaitGroup, wchan chan int, filepath string, toverify
 	hostipmap = make(map[string]string)
 	//we use the long string as "rand" in fast.com. it is not unique, but it can be used to distinguish measurement servers
 	randidmap := make(map[string][]*common.MeasFlow)
-	//
 	//hostports := []string{}
 	cnttimeline := []*tracelog.Counters{}
 	var nlog *netlog.NetLogRecord = nil
@@ -251,8 +212,6 @@ func LoadOokla(globwg *sync.WaitGroup, wchan chan int, filepath string, toverify
 		}
 		log.Println("Done with Trace.", mlen)
 	}
-	//var allrtts map[int]*tsharkutil.RTT_Stream
-	//var allpck_lost map[int]*tsharkutil.LostStream
 	var allsslpcks int
 	if fileinfo.PcapExist {
 		allrtts, allpck_lost, allpcks := loadpcap(fileinfo, &metatiming, measflowmap, allmflows, toverify)
@@ -268,55 +227,14 @@ func LoadOokla(globwg *sync.WaitGroup, wchan chan int, filepath string, toverify
 		}
 
 	}
-	/*
-		for _, mv := range measflowmap {
-			log.Println(mv.Url)
-			log.Println(mv.Random, mv.ReqId, mv.Rrs.Method, mv.Rrs.ReqTs, mv.XhrTiming)
-		}
-	*/
-	//get the timestamp of sending the DNS request
-	//save data
+
 	alldata := common.TestSummary{SourceFiles: fileinfo, Meta: &metatiming, Flows: allmflows, Flowmap: measflowmap, CounterTimeline: cnttimeline, PckNum: allsslpcks}
 	err := savedata.SaveData(savedata.GobName(fileinfo.Tracelog), alldata)
 	if err != nil {
 		log.Fatal(err)
 	}
-	/*
-		var buf bytes.Buffer
 
-		enc := json.NewEncoder(&buf)
-		enc.Encode(allpck_lost)
-		paths := strings.Split(filepath, ".")
-		lostPath := paths[0] + ".lost.json"
-		f, erro := os.OpenFile(lostPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-		if erro != nil {
-			log.Println(erro)
-		}
-
-		n, err := io.WriteString(f, buf.String())
-		if err != nil {
-			log.Println(n, err)
-		}
-
-
-
-		var buf1 bytes.Buffer
-
-		enc1 := json.NewEncoder(&buf1)
-		enc1.Encode(allrtts)
-		RttPath := paths[0] + ".rtt.json"
-		f1, erro1 := os.OpenFile(RttPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-		if erro1 != nil {
-			log.Println(erro1)
-		}
-
-		n1, err1 := io.WriteString(f1, buf.String())
-		if err1 != nil {
-			log.Println(n1, err1)
-		}
-	*/
 	return alldata
-	//	log.Println(metatiming)
 }
 
 func loadtrace(msgch chan tracelog.PerfLog, metatiming *common.MetaTiming, measflowmap map[string]*common.MeasFlow, randreqidmap map[string][]*common.MeasFlow, cnttimeline []*tracelog.Counters) {
@@ -368,7 +286,6 @@ func loadtrace(msgch chan tracelog.PerfLog, metatiming *common.MetaTiming, measf
 									break
 								}
 							}
-							//randreqidmap[urlobj[3]].ReqId = sndReq.Data.RequestID
 						}
 						if !found {
 							newf := &common.MeasFlow{ReqId: sndReq.Data.RequestID}
@@ -381,16 +298,6 @@ func loadtrace(msgch chan tracelog.PerfLog, metatiming *common.MetaTiming, measf
 							}
 
 						}
-
-						/*
-
-							else {
-
-								//mapping does not exist, probably cannot see the xhr
-								newf := &ComcastMeasFlow{ReqId: sndReq.Data.RequestID}}
-								randreqidmap[urlobj[3]] = &ComcastMeasFlow{ReqId: sndReq.Data.RequestID}
-								measflowmap[sndReq.Data.RequestID] = randreqidmap[urlobj[3]]
-							}*/
 						//create a flow record
 						measflowmap[sndReq.Data.RequestID].Url = urlobj[0]
 						measflowmap[sndReq.Data.RequestID].Host = urlobj[1]
@@ -398,21 +305,11 @@ func loadtrace(msgch chan tracelog.PerfLog, metatiming *common.MetaTiming, measf
 						if len(urlobj[2]) > 1 && !contains(hostports, urlobj[2]) {
 							hostports = append(hostports, urlobj[2])
 						}
-						//rnglen := 0
-						//if downup == 0 {
-						//	rnglen, _ = strconv.Atoi(urlobj[4])
-						//} else if downup == 1 {
-						//	rnglen = 10000000
-						//} else if downup == 2 {
-						//	//hello
-						//	downup = 0
-						//	rnglen = 0
-						//}
-						//measflowmap[sndReq.Data.RequestID].RangeLen = rnglen
+						// measflowmap[sndReq.Data.RequestID].RangeLen = rnglen
 						measflowmap[sndReq.Data.RequestID].DownUp = downup
 						measflowmap[sndReq.Data.RequestID].Rrs = tracelog.FlowDetail{ReqTs: l.Ts - metatiming.Index, Method: sndReq.Data.RequestMethod, Priority: sndReq.Data.Priority}
 					} else {
-						//flow existed?
+						// flow existed?
 						log.Println("Dup flow ", sndReq.Data.RequestID)
 					}
 				}
@@ -492,7 +389,7 @@ func loadtrace(msgch chan tracelog.PerfLog, metatiming *common.MetaTiming, measf
 							tmp.XhrTiming.Unsent = 0
 							tmp.XhrTiming.Opened = ets
 							randreqidmap[urlhash] = []*common.MeasFlow{tmp}
-							//								randreqidmap[urlobj[3]] = &XhrMeta{ReqId: "", Unsent: 0, Opened: l.Ts}
+							//	randreqidmap[urlobj[3]] = &XhrMeta{ReqId: "", Unsent: 0, Opened: l.Ts}
 						} else {
 							var curflow *common.MeasFlow
 							for _, tmpflow := range randreqidmap[urlhash] {
@@ -534,19 +431,6 @@ func loadtrace(msgch chan tracelog.PerfLog, metatiming *common.MetaTiming, measf
 									rurl.XhrTiming.Header = ets
 								}
 							}
-							/*for _, rurl := range rmap {
-								if rurl.XhrTiming.Opened != 0 && rurl.Rrs.Method == "OPTIONS" {
-									tmpts = rurl.XhrTiming.Opened
-								}
-								if rurl.XhrTiming.Header == 0 && len(rurl.XhrTiming.Loading) == 0 {
-									rurl.XhrTiming.Header = ets
-								}
-								if rurl.Rrs.Method == "POST" && tmpts > 0 {
-									//back fill open ts
-									rurl.XhrTiming.Opened = tmpts
-								}
-
-							}*/
 						}
 					case 3:
 						if rmap, exist := randreqidmap[urlhash]; exist {
@@ -568,11 +452,7 @@ func loadtrace(msgch chan tracelog.PerfLog, metatiming *common.MetaTiming, measf
 									done = true
 								}
 							}
-							/*for _, rurl := range rmap {
-								if rurl.XhrTiming.Done == 0 {
-									rurl.XhrTiming.Done = ets
-								}
-							}*/
+
 						}
 					}
 				}
@@ -633,16 +513,6 @@ func loadpcap(fileinfo *common.FilePaths, metatiming *common.MetaTiming, measflo
 			return rtaili < rtailj
 		})
 	}
-	/*
-		for k, _ := range measflowmap {
-			// k == flow_random_id
-			rsplit := strings.Split(k, ".")
-			reqprefix = rsplit[0]
-			rtail, _ := strconv.Atoi(rsplit[1])
-			reqidtail = append(reqidtail, rtail)
-		}
-		sort.Ints(reqidtail)
-	*/
 
 	flowremainbyte := make(map[int]*TLSLeftOver)
 
@@ -668,7 +538,6 @@ func loadpcap(fileinfo *common.FilePaths, metatiming *common.MetaTiming, measflo
 				p := allsslpcks[pckkey]
 				addpacket := true
 				//flow not exist in excludeflow
-				//ptime := tsharkutil.WithTs(p.Ts-metatiming.IndexPcap, curflow.Rrs.ReqTs, 1000000)
 
 				//outgoing/incoming packet with matched source port
 				if assignedstream == 0 && (p.DstIp == mip || p.SrcIp == mip) && ((strconv.Itoa(p.DstPort) == curflow.Port && strconv.Itoa(p.SrcPort) == curflow.SrcPort) || (strconv.Itoa(p.DstPort) == curflow.SrcPort && strconv.Itoa(p.SrcPort) == curflow.Port)) && !p.Claimed {
@@ -759,10 +628,7 @@ func loadpcap(fileinfo *common.FilePaths, metatiming *common.MetaTiming, measflo
 							curflow.PcapInfo.Request = &tsharkutil.HRequest{}
 						}
 						if curflow.PcapInfo.Request.Ts == 0 {
-							//still looking for the http request
-							/*							if p.DstIp == mip && strconv.Itoa(p.DstPort) == curflow.Port {
-														log.Println("found suspective request: ", p.FrameNo, p.TcpLen, p.SSLRecordType, p.SSL_client_ip, p.SSL_clientstate, p.SSL_serverstate)
-													}*/
+
 							if p.TcpLen > 0 && p.SSLRecordType == 23 && p.TcpLen >= 400 {
 								if p.DstIp == mip && strconv.Itoa(p.DstPort) == curflow.Port {
 									uri := ""
@@ -968,23 +834,6 @@ func loadpcap(fileinfo *common.FilePaths, metatiming *common.MetaTiming, measflo
 							log.Println("Flowdone", assignedstream)
 							break
 						}
-						/*						if revoke {
-													log.Println("Revoke ", assignedstream)
-													assignedstream = 0
-													accumdatalen = 0
-
-													startreqseq = 0
-													curreqseq = 0
-													startrespseq = 0
-													currespseq = 0
-													revokeassignment(curflow, pendingpck)
-													//do it all over again
-													pckkey = -1
-													revoke = false
-													flowdone = false
-													confirmed = false
-												}
-						*/
 					}
 				}
 			}
@@ -1122,295 +971,6 @@ func DecryptAnalysis(nameprefix string, cmtest *common.TestSummary) {
 	}*/
 }
 
-//
-//	//get the stream id of upload/download flows
-//	//streamidmap, streamurimap := tsharkutil.HTTPRequestStream(filepath, []string{"downloads", "uploads"})
-//	reqidtail := []int{}
-//	reqprefix := ""
-//	for midx, _ := range allmflows {
-//		rsplit := strings.Split(k, ".")
-//		reqprefix = rsplit[0]
-//		rtail, _ := strconv.Atoi(rsplit[1])
-//		reqidtail = append(reqidtail, rtail)
-//	}
-//	sort.Ints(reqidtail)
-//	for _, ridt := range reqidtail {
-//		rid := reqprefix + "." + strconv.Itoa(ridt)
-//		curflow := measflowmap[rid]
-//		if mip, ipexist := hostipmap[curflow.Host]; ipexist {
-//			assignedstream := 0
-//			confirmed := false
-//			//exclude the first two flows, which is websocket connection
-//			excludeflow := make(map[int]bool)
-//			excludeflow[streamids[0]] = true
-//			excludeflow[streamids[1]] = true
-//			accumdatalen := 0
-//			flowdone := false
-//			//revoke := false
-//			pendingpck := []*tsharkutil.PckSSLInfo{}
-//			log.Println("Working on ", rid, curflow.Host, mip, curflow.Rrs.ReqTs)
-//
-//			for pckkey := 0; pckkey < len(allsslpcks); pckkey++ {
-//				p := allsslpcks[pckkey]
-//				_, xflow := excludeflow[p.StreamId]
-//				//flow not exist in excludeflow
-//				if !xflow {
-//					ptime := tsharkutil.WithTs(p.Ts-metatiming.IndexPcap, curflow.Rrs.ReqTs, 500000)
-//					if assignedstream == 0 && p.DstIp == mip && !p.Claimed && !excludeflow[p.StreamId] && ptime {
-//						//						log.Println("range check:", p.Ts-metatiming.IndexPcap, curflow.Rrs.ReqTs, ptime)
-//						assignedstream = p.StreamId
-//						log.Println("flow ", curflow.ReqId, " binds to ", p.StreamId, " frame ", p.FrameNo)
-//						p.Claimed = true
-//						var req *tsharkutil.HRequest
-//						resp := &tsharkutil.HResponse{}
-//						//persistent http request
-//						if p.TcpLen > 0 && p.SSLRecordType == 23 {
-//							req = &tsharkutil.HRequest{FrameNum: p.FrameNo, Ts: p.Ts, Method: curflow.Rrs.Method, Uri: ""}
-//						} else {
-//							//otherwise it could be a SYN
-//							req = &tsharkutil.HRequest{}
-//						}
-//						pendingpck = append(pendingpck, p)
-//						curflow.PcapInfo = tsharkutil.StreamPcap{StreamId: assignedstream, Request: req, Response: resp, PckDump: []*tsharkutil.PckInfo{p.GetPckInfo()}}
-//						curflow.SrcPort = strconv.Itoa(p.SrcPort)
-//						curflow.DstIp = p.DstIp
-//					} else {
-//						if assignedstream == p.StreamId {
-//							if curflow.PcapInfo.Request.Ts == 0 {
-//								//still looking for the http request
-//								if p.TcpLen > 0 && p.SSLRecordType == 23 {
-//									if p.DstIp == mip {
-//										log.Println("Found request ", p.FrameNo)
-//										curflow.PcapInfo.Request.FrameNum = p.FrameNo
-//										curflow.PcapInfo.Request.Ts = p.Ts
-//										curflow.PcapInfo.Request.Method = curflow.Rrs.Method
-//										curflow.PcapInfo.Request.Uri = ""
-//									} else if p.SrcIp == mip {
-//										//receive data before request?
-//										log.Println("Revoke: receive data before request", p.FrameNo)
-//										//revoke = true
-//									}
-//								}
-//
-//							} else {
-//								//response header
-//								if curflow.PcapInfo.Response.Ts == 0 {
-//									if p.SrcIp == mip && p.TcpLen > 0 && p.SSLRecordType == 23 && !flowdone {
-//										curflow.PcapInfo.Response.FrameNum = p.FrameNo
-//										curflow.PcapInfo.Response.Ts = p.Ts
-//										log.Println("Found response ", p.FrameNo)
-//										//download. more packets should come in after header
-//										if curflow.DownUp == 0 {
-//											curflow.PcapInfo.Response.FrameEnd = 0
-//										} else {
-//											//upload, expect 1 data packet response.
-//											if (curflow.Rrs.Method == "OPTIONS" && accumdatalen == 0) || (curflow.Rrs.Method == "POST" && accumdatalen > 100000) {
-//												flowdone = true
-//												curflow.PcapInfo.Response.FrameEnd = p.FrameNo
-//											} else {
-//												log.Println("Revoke: invalid incoming packet")
-//												//revoke = true
-//												flowdone = false
-//											}
-//										}
-//									} else if p.DstIp == mip && p.TcpLen > 0 && p.SSLRecordType == 23 && !p.TCPRetrans {
-//										//got another ongoing data packet
-//										if curflow.Rrs.Method == "OPTIONS" {
-//											log.Println("Revoke: receive unexpected ongoing packet", p.FrameNo)
-//											//revoke = true
-//											flowdone = false
-//										} else {
-//											//POST, expect more outgoing packets
-//											accumdatalen += p.TcpLen
-//										}
-//									}
-//								} else {
-//									//we assigned response header. check for violation or adding data packets
-//
-//									if curflow.DownUp == 0 {
-//										//download flows. we expect only incoming data packets.
-//										if p.SrcIp == mip && p.TcpLen > 0 && p.SSLRecordType == 23 {
-//											if !flowdone && !p.TCPRetrans {
-//												//download flow. count new packets.
-//												accumdatalen += p.TcpLen
-//												//larger than the range parameter in http request
-//												if accumdatalen > curflow.RangeLen {
-//													log.Println("Response ends ", p.FrameNo)
-//													curflow.PcapInfo.Response.FrameEnd = p.FrameNo
-//													flowdone = true
-//												}
-//											}
-//										} else if p.DstIp == mip && p.TcpLen > 0 && p.SSLRecordType == 23 {
-//											errorpercent := math.Abs(float64(accumdatalen-curflow.RangeLen)) / float64(curflow.RangeLen)
-//											if !flowdone {
-//												if errorpercent > 0.5 {
-//													//outgoing data before reaching expected data length, wrong assignment
-//													log.Println("Revoke: outgoing data exceed length at frame", p.FrameNo, accumdatalen, curflow.RangeLen)
-//													//revoke = true
-//													flowdone = false
-//												} else {
-//													log.Println("accept with low margin", p.FrameNo, errorpercent)
-//													curflow.PcapInfo.Response.FrameEnd = curflow.PcapInfo.PckDump[len(curflow.PcapInfo.PckDump)-1].FrameNo
-//													flowdone = true
-//													confirmed = true
-//												}
-//											} else {
-//												//start of next request
-//												confirmed = true
-//											}
-//										}
-//									} else {
-//										//we expect 1 incoming/outgoing for OPTIONS
-//										//upload. we only expect outgoing data size is 10000000
-//
-//										if p.SrcIp == mip && p.TcpLen > 0 && p.SSLRecordType == 23 && !p.TCPRetrans {
-//											//another incoming packet and not a retransmission. wrong flow
-//											log.Println("Revoke: another incoming packet. wrong flow", p.FrameNo)
-//											//revoke = true
-//											flowdone = false
-//										} else if p.DstIp == mip && p.TcpLen > 0 && p.SSLRecordType == 23 && !p.TCPRetrans {
-//											//another outgoing, after found the response
-//											confirmed = true
-//										}
-//									}
-//								}
-//								if flowdone && confirmed {
-//									break
-//								}
-//							}
-//							if pckkey > -1 {
-//								//just claim all the packets in between
-//								pendingpck = append(pendingpck, p)
-//								p.Claimed = true
-//								curflow.PcapInfo.PckDump = append(curflow.PcapInfo.PckDump, p.GetPckInfo())
-//							}
-//
-//							//if revoke {
-//							//	log.Println("Revoke ", assignedstream)
-//							//	excludeflow[assignedstream] = true
-//							//	assignedstream = 0
-//							//	accumdatalen = 0
-//							//	revokeassignment(curflow, pendingpck)
-//							//	//do it all over again
-//							//	pckkey = -1
-//							//	revoke = false
-//							//	flowdone = false
-//							//	confirmed = false
-//							//}
-//
-//						}
-//					}
-//				}
-//			}
-//			if assignedstream == 0 {
-//				log.Println("fail to assign stream to packets")
-//			}
-//		} else {
-//			log.Fatal("cannot match the hostname with IP", mip)
-//		}
-//	}
-//
-//	//allocate downup to allrtts
-//	for rand_id,_:=range measflowmap{
-//		flow,ok:= measflowmap[rand_id]
-//		if ok{
-//			stream_id := flow.PcapInfo.StreamId
-//			if _,ok := allrtts[stream_id];ok{
-//				log.Println("meaflow",measflowmap[rand_id].DownUp)
-//				allrtts[stream_id].Downup = !(measflowmap[rand_id].DownUp==0) //convert int to bool
-//				allpck_lost[stream_id].Downup = allrtts[stream_id].Downup
-//				allpck_lost[stream_id].TStart  = allrtts[stream_id].TStart
-//				allpck_lost[stream_id].TEnd = allrtts[stream_id].TEnd
-//				//true: up; false: down
-//			}
-//		}
-//	}
-//	//log.Println(allrtts)
-//
-//	log.Println("Done with tshark")
-//	return allrtts, allpck_lost, allpcks_len
-//}
-
-//	for rid, flow := range measflowmap {
-/*	for _, flow := range measflowmap {
-	var bytesize []float64
-	var downtcpsize []float64
-	var uptcpsize []float64
-	for _, b := range flow.Rrs.RrsTimeline {
-		bytesize = append(bytesize, b.Length)
-	}
-	for _, pb := range flow.PcapInfo.PckDump {
-		//uplink
-		if pb.SrcIp == cip {
-			uptcpsize = append(uptcpsize, float64(pb.TcpLen))
-		} else {
-			downtcpsize = append(downtcpsize, float64(pb.TcpLen))
-		}
-	}
-	log.Println(len(flow.PcapInfo.PckDump), len(flow.Rrs.RrsTimeline), floats.Sum(bytesize), floats.Sum(downtcpsize), floats.Sum(uptcpsize))
-}*/
-////save data
-//alldata := OoklaTest{Meta: &metatiming, Flowmap: measflowmap, CounterTimeline: cnttimeline, pck_num: len(allsslpcks),rttlist:allrtts}
-//err := savedata.SaveData(savedata.GobName(filepath), alldata)
-//if err != nil {
-//	log.Fatal(err)
-//}
-
-//// save allrtts to json file
-//var buf bytes.Buffer
-//
-//enc := json.NewEncoder(&buf)
-//enc.Encode(allrtts)
-//paths :=strings.Split(filepath,".")
-//RttPath := paths[0]+".rtt.json"
-//f, erro := os.OpenFile(RttPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-//if erro != nil {
-//	log.Println(erro)
-//}
-//
-//n, err := io.WriteString(f, buf.String())
-//if err != nil {
-//	log.Println(n, err)
-//}
-
-// save alllosts to json file
-// save alllosts to json file
-//	var buf bytes.Buffer
-//
-//	enc := json.NewEncoder(&buf)
-//	enc.Encode(allpck_lost)
-//	paths :=strings.Split(filepath,".")
-//	lostPath := paths[0]+".lost.json"
-//	f, erro := os.OpenFile(lostPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-//	if erro != nil {
-//		log.Println(erro)
-//	}
-//
-//	n, err := io.WriteString(f, buf.String())
-//	if err != nil {
-//		log.Println(n, err)
-//	}
-//
-//	var buf1 bytes.Buffer
-//
-//	enc1 := json.NewEncoder(&buf1)
-//	enc1.Encode(allrtts)
-//	RttPath := paths[0]+".rtt.json"
-//	f1, erro1 := os.OpenFile(RttPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-//	if erro1 != nil {
-//		log.Println(erro1)
-//	}
-//
-//	n1, err1 := io.WriteString(f1, buf.String())
-//	if err1 != nil {
-//		log.Println(n1, err1)
-//	}
-//
-//	return alldata
-//
-//	return alldata
-//	//	log.Println(metatiming)
-//}
 
 func RunOoklaAnalysis(globwg *sync.WaitGroup, wchan chan int, filepath string, toverify bool) {
 	var alldata common.TestSummary
@@ -1433,7 +993,7 @@ func RunOoklaAnalysis(globwg *sync.WaitGroup, wchan chan int, filepath string, t
 	<-wchan
 }
 
-//
+
 func ParseOoklaURL(u string) (downup int, urls []string) {
 	var urlobj []string
 	downup = 0 //down
@@ -1451,29 +1011,6 @@ func ParseOoklaURL(u string) (downup int, urls []string) {
 
 }
 
-/*
-func ParseOoklaURI(u string) (r string) {
-	var uriobj []string
-	if uriobj = downloadUriRegex.FindStringSubmatch(u); uriobj == nil {
-		if uriobj = uploadUrlRegex.FindStringSubmatch(u); urlobj != nil {
-			downup = 1
-		} else {
-			log.Fatal("URL not match", u)
-		}
-	}
-	return strings.TrimSpace(uriobj[0])
-}
-*/
-//func revokeassignment(mflow *OoklaMeasFlow, restorepck []*tsharkutil.PckSSLInfo) {
-//	mflow.PcapInfo.StreamId = 0
-//	mflow.PcapInfo.Request = nil
-//	mflow.PcapInfo.Response = nil
-//	mflow.PcapInfo.PckDump = nil
-//	for _, p := range restorepck {
-//		p.Claimed = false
-//	}
-//}
-//
 func contains(slice []string, item string) bool {
 	set := make(map[string]struct{}, len(slice))
 	for _, s := range slice {

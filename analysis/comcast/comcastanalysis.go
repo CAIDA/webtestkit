@@ -42,10 +42,8 @@ func ComcastPlotRRTime(filename string, metatiming *common.MetaTiming, measflow 
 		}
 	}
 
-	p, err := plot.New()
-	if err != nil {
-		log.Fatal(err)
-	}
+	p := plot.New()
+
 	p.Title.Text = "Boxplot Request-Response Time diff"
 	p.Y.Label.Text = "Overhead /s"
 	w := vg.Points(20)
@@ -67,7 +65,7 @@ func ComcastPlotRRTime(filename string, metatiming *common.MetaTiming, measflow 
 	if err := p.Save(4*vg.Inch, 5*vg.Inch, rrtimename); err != nil {
 		log.Fatal(err)
 	}
-	pcdf, err := plot.New()
+	pcdf := plot.New()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -97,15 +95,12 @@ func ComcastPlotRRTime(filename string, metatiming *common.MetaTiming, measflow 
 func ComcastPlotFlow(filename string, ct common.TestSummary) {
 	metatiming := ct.Meta
 	measflow := ct.Flowmap
-	p, err := plot.New()
-	pr, err := plot.New()
-	pth, err := plot.New()
-	pxth, err := plot.New()
-	ptotal, err := plot.New()
+	p := plot.New()
+	pr := plot.New()
+	pth := plot.New()
+	pxth := plot.New()
+	ptotal := plot.New()
 
-	if err != nil {
-		log.Fatal(err)
-	}
 	ival := 0.05
 	pcaptput := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
 	xtput := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
@@ -128,7 +123,7 @@ func ComcastPlotFlow(filename string, ct common.TestSummary) {
 			accr := evaluation.AccumRrs(metatiming.Index, flow.Rrs)
 			pcaptput.AddTput(ap)
 			xtput.AddTput(ax)
-			err = plotutil.AddLinePoints(p, accp)
+			err := plotutil.AddLinePoints(p, accp)
 			err = plotutil.AddLinePoints(pr, accr)
 			err = plotutil.AddLinePoints(pth, evaluation.PcapTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival))
 			err = plotutil.AddLinePoints(pxth, evaluation.XhrTput(flow.Rrs, flow.XhrTiming, ival))
@@ -141,7 +136,7 @@ func ComcastPlotFlow(filename string, ct common.TestSummary) {
 		}
 	}
 	_ = downcsv.CloseCSV()
-	err = plotutil.AddLinePoints(ptotal, "Pcap", pcaptput.TotalTput(), "XHR", xtput.TotalTput())
+	err := plotutil.AddLinePoints(ptotal, "Pcap", pcaptput.TotalTput(), "XHR", xtput.TotalTput())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -230,12 +225,10 @@ func ComcastPlotFlow(filename string, ct common.TestSummary) {
 func ComcastPlotUpload(filename string, ct common.TestSummary) {
 	metatiming := ct.Meta
 	measflow := ct.Flowmap
-	p, err := plot.New()
+	p := plot.New()
 
-	pth, err := plot.New()
-	if err != nil {
-		log.Fatal(err)
-	}
+	pth := plot.New()
+
 	ival := 0.05
 	pcaptputwopt := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
 	xhrtput := evaluation.OverallTput{Interval: ival, FlowsTput: []plotter.XYs{}}
@@ -251,21 +244,13 @@ func ComcastPlotUpload(filename string, ct common.TestSummary) {
 			pcaptputwopt.AddTput(ap)
 			xhrtput.AddTput(ax)
 			rrstput.AddTput(ar)
-			err = plotutil.AddLinePoints(pth, evaluation.PcapUpTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival))
-			/*			err = plotutil.AddLinePoints(p, accp)
-						err = plotutil.AddLinePoints(pr, accr)
-						err = plotutil.AddLinePoints(pth, PcapTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, 0.5))
-						err = plotutil.AddLinePoints(pxth, XhrTput(flow.Rrs, 0.5))
-						if len(accp) > 0 && len(accr) > 0 {
-							factor := float64(len(accr)) / float64(len(accp))
-							log.Println("Pcap:", len(accp), "rrs:", len(accr), factor)
-						}
-						if err != nil {
-							log.Fatal(err)
-						}*/
+			err := plotutil.AddLinePoints(pth, evaluation.PcapUpTput(metatiming.IndexPcap, flow.Port, flow.PcapInfo, ival))
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
-	err = plotutil.AddLinePoints(p, "XHR", xhrtput.TotalTput(), "RRS", rrstput.TotalTput(), "pcap", pcaptputwopt.TotalTput())
+	err := plotutil.AddLinePoints(p, "XHR", xhrtput.TotalTput(), "RRS", rrstput.TotalTput(), "pcap", pcaptputwopt.TotalTput())
 	log.Println(xhrtput.TotalTput())
 	log.Println(rrstput.TotalTput())
 	log.Println(pcaptputwopt.TotalTput())
@@ -296,141 +281,3 @@ func ComcastPlotUpload(filename string, ct common.TestSummary) {
 
 }
 
-/*
-func AccumRrs(index int64, rrsflow tracelog.FlowDetail) plotter.XYs {
-	var accrrsvalue float64
-	accrrsvalue = 0
-	tsxy := make(plotter.XYs, len(rrsflow.RrsTimeline)+1)
-	tsxy = append(tsxy, plotter.XY{X: float64(rrsflow.ReqTs) / 1000000, Y: accrrsvalue})
-	for _, tsline := range rrsflow.RrsTimeline {
-		accrrsvalue += tsline.Length
-		tsxy = append(tsxy, plotter.XY{X: float64(tsline.Ts) / 1000000, Y: accrrsvalue})
-	}
-	//log.Printf("Rrs %v\n", tsxy)
-	return tsxy
-}
-
-func AccumPcap(indexts float64, dstport string, pckinfo []*tsharkutil.PckInfo) plotter.XYs {
-	var accpcapvalue float64
-	if len(pckinfo) == 0 {
-		return plotter.XYs{}
-	}
-	accpcapvalue = 0
-	dport, _ := strconv.Atoi(dstport)
-	tsxy := make(plotter.XYs, 0)
-	tsxy = append(tsxy, plotter.XY{X: float64(pckinfo[0].Ts - indexts), Y: 0})
-	for _, pck := range pckinfo {
-		//downlink
-		if pck.SrcPort == dport {
-			accpcapvalue += float64(pck.TcpLen)
-			tsxy = append(tsxy, plotter.XY{X: pck.Ts - indexts, Y: accpcapvalue})
-		}
-	}
-	//log.Printf("Pcap %v\n", tsxy)
-	return tsxy
-}
-
-//return Mbps
-func PcapTput(indexts float64, dstport string, stream tsharkutil.StreamPcap, interval float64) plotter.XYs {
-	dport, _ := strconv.Atoi(dstport)
-	downth, _ := tsharkutil.Throughput(indexts, dport, stream, interval)
-	if downth != nil {
-		tsxy := make(plotter.XYs, 0)
-		for _, th := range downth {
-			tsxy = append(tsxy, plotter.XY{X: th.STs - indexts, Y: th.Tput / 1000000})
-
-		}
-		return tsxy
-	} else {
-		return plotter.XYs{}
-	}
-
-}
-func PcapUpTput(indexts float64, dstport string, stream tsharkutil.StreamPcap, interval float64) plotter.XYs {
-	dport, _ := strconv.Atoi(dstport)
-	upth := tsharkutil.UploadThroughput(indexts, dport, stream, interval)
-	if upth != nil {
-		tsxy := make(plotter.XYs, 0)
-		for _, th := range upth {
-			tsxy = append(tsxy, plotter.XY{X: th.STs - indexts, Y: th.Tput / 1000000})
-		}
-		return tsxy
-	} else {
-		return plotter.XYs{}
-	}
-
-}
-
-func XhrUpTput(pcapindexts float64, xhrindexts int64, dstport string, stream tsharkutil.StreamPcap, xhrtiming tracelog.XhrFlow, interval float64) plotter.XYs {
-	dport, _ := strconv.Atoi(dstport)
-	upth := tsharkutil.UploadThroughput(pcapindexts, dport, stream, interval)
-	if upth != nil {
-		tsxy := make(plotter.XYs, 0)
-		//only has 1 data point
-		curinterval := math.Floor(float64(xhrtiming.Done)/1000000/interval) * interval
-		//	log.Println("bytetotal", upth[0].ByteTotal, xhrtiming.Done, xhrtiming.Opened)
-		tsxy = append(tsxy, plotter.XY{X: curinterval, Y: (float64(upth[0].ByteTotal) * 8 / (float64(xhrtiming.Done-xhrtiming.Opened) / 1000000) / 1000000)})
-		return tsxy
-	} else {
-		return plotter.XYs{}
-	}
-
-}
-
-func (otput *OverallTput) AddTput(fthput plotter.XYs) {
-	otput.FlowsTput = append(otput.FlowsTput, fthput)
-}
-
-func (otput *OverallTput) TotalTput() plotter.XYs {
-	if otput.Interval == 0 {
-		otput.Interval = 1
-	}
-	var alltput plotter.XYs
-
-	for fidx, f := range otput.FlowsTput {
-		//first flow, just copy
-		if fidx == 0 {
-			alltput, _ = plotter.CopyXYs(f)
-		} else {
-			for _, fbin := range f {
-				xbin := math.Floor(fbin.X / otput.Interval)
-				inserted := false
-				for i := 0; i < alltput.Len(); i++ {
-					if xbin == math.Floor(alltput[i].X/otput.Interval) {
-						alltput[i].Y += fbin.Y
-						inserted = true
-						break
-					} else if math.Floor(alltput[i].X/otput.Interval) > xbin {
-						//need to insert a new bin ahead of it
-						alltput = append(alltput, plotter.XY{})
-						copy(alltput[i+1:], alltput[i:])
-						alltput[i] = fbin
-						inserted = true
-						break
-						//						alltput = append(alltput[:i-1], fbin,alltput[i:])
-					}
-
-				}
-				if !inserted {
-					//append to the end
-					alltput = append(alltput, fbin)
-				}
-			}
-		}
-	}
-	return alltput
-}
-
-func XhrTput(flow tracelog.FlowDetail, interval float64) plotter.XYs {
-	th := tracelog.XhrThput(flow, interval)
-	if th != nil {
-		tsxy := make(plotter.XYs, 0)
-		for _, tvalue := range th {
-			tsxy = append(tsxy, plotter.XY{X: tvalue.STs, Y: tvalue.Tput / 1000000})
-		}
-		return tsxy
-	} else {
-		return plotter.XYs{}
-	}
-}
-*/
